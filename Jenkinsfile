@@ -13,7 +13,7 @@ pipeline {
         ORG_NAME = "so-so2456"
         TEMPLATE_URL = "https://github.com/so-so2456/argocd-manifest-template.git"
         GITHUB_USERNAME = "so-so2456"
-        ARGOCD_NAMESPACE = "argo"
+        ARGOCD_URL = "localhost:8083"
         NEXUS_IP = "localhost:5443"
         NEXUS_ID = "admin"
         NEXUS_PW = "123"
@@ -136,9 +136,9 @@ pipeline {
         }
         stage("Sync with argocd") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'argocd-cred', passwordVariable: 'qwe!@#123', usernameVariable: 'admin')]) {
+                withCredentials([usernamePassword(credentialsId: 'argocd-cred', passwordVariable: 'password', usernameVariable: 'username')]) {
                     sh """
-                        echo "y" | argocd login ${argocd_url} --username ${username} --password ${password} --insecure
+                        echo "y" | argocd login ${env.ARGOCD_URL} --username ${username} --password ${password} --insecure
 
                         # todo. app create를 계속해도 이상없는지
                         argocd app create ${params.application_name} \
