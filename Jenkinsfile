@@ -42,5 +42,116 @@ pipeline {
                 sh "docker push ${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}"
             }
 		}
+        stage("Check manifest repo exist & Create manifest repo if not exist") {
+            steps {
+                script {
+                    // repo가 있는지 확인하고 없으면 repo 생성
+                    def argo_manifest_repo = "https://github.com/${env.GITHUB_USERNAME}/${params.application_name}-manifest"
+                    def check_repo_response = sh(
+                        returnStdout: true,
+                        script: "curl -w \'%{http_code}\' -o /dev/null " + argo_manifest_repo
+                    )
+
+                    if (check_repo_response == "404") {
+                        println "argo_manifest_repo(${argo_manifest_repo}) is not exist. create manifest repo."
+                        // argo manifest repo가 없으면 repo를 생성하고 초기화
+                        withCredentials([string(credentialsId: 'github_token', variable: 'TOKEN')]) {
+                        // manifest repo 생성
+                        def github_create_repo_api = "https://api.github.com/orgs/${env.GITHUB_USERNAME}/repos "
+                        def github_auth = "-H \"Authorization: Bearer ${TOKEN}\" "
+                        def github_create_repo_body = "-d '{\"name\": \"${params.application_name}\"}'"
+
+                        def create_repo_response = sh(
+                            returnStdout: true,
+                            script: "curl -w \'%{http_code}\' -o /dev/null "  + github_auth + github_create_repo_api + github_create_repo_body
+                        )
+                        if (create_repo_response != "201"){
+                            error("Failed to create repository, response code: ${response}")
+                        }
+
+                        // manifest repo에 template복사
+                        // 코드의 zip으로 다운 받는 대신, 태그나 릴리즈로 받는게 안전함
+                        sh """
+                            rm -rf ./manifest_repo && rm -rf ./template && rm -rf ./template.zip
+                            echo git clone repo && git clone https://${env.GITHUB_USERNAME}:${TOKEN}@github.com/${env.GITHUB_USERNAME}/${params.application_name}}-manifest.git ./manifest_repo
+                            echo download template && curl -o template.zip -L  https://github.com/${env.GITHUB_USERNAME}/argocd-manifest-template/archive/refs/heads/main.zip
+                            echo uncompress template &&  unzip -j template.zip -d ./template
+                            cp ./template/* ./manifest_repo
+                        """
+
+                        // git push
+                        sh """
+                            cd ./manifest_repo
+                            git status
+
+                            git config --local user.email "jenkins_bot@demo.com"
+                            git config --local user.name "jenkins_bot"
+
+                            git add -A
+                            git commit --allow-empty -m "copy template"
+
+                            git push
+                        """
+
+                        // 작업파일 삭제
+                        sh """
+                            rm -rf ./manifest_repo && rm -rf ./template && rm -rf ./template.zip
+                        """
+                        }
+                    } else {
+                        println "argo_manifest_repo(${argo_manifest_repo}) alreay exist. skip create manifest repo."
+                    }
+                }
+            }
+        }
+        stage("update manifest") {
+            steps {
+                withCredentials([string(credentialsId: 'github_token', variable: 'TOKEN')]) {
+                    sh "rm -rf ./manifest_repo"
+                    sh "echo git clone repo && git clone https://${env.GITHUB_USERNAME}:${TOKEN}@github.com/${env.GITHUB_USERNAME}/${params.application_name}-manifest.git ./manifest_repo"
+
+                    // update helm chart values.yaml
+                    sh """
+                        cd ./manifest_repo
+
+                        export docker_image=${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}
+                        yq -i '.image = strenv(docker_image)' values.yaml
+                    """
+
+                    // git push
+                    sh """
+                        cd ./manifest_repo
+                        git status
+
+                        git config --local user.email "jenkins_bot@demo.com"
+                        git config --local user.name "jenkins_bot"
+
+                        git add -A
+                        git commit --allow-empty -m "update manifest"
+
+                        git push
+                    """
+                }
+            }
+        }
+        // stage("argocd sync") {
+        //     steps {
+        //         withCredentials([usernamePassword(credentialsId: 'argocd-cred', passwordVariable: 'password', usernameVariable: 'username')]) {
+        //             sh """
+        //                 echo "y" | argocd login ${argocd_url} --username ${username} --password ${password} --insecure
+
+        //                 # todo. app create를 계속해도 이상없는지
+        //                 argocd app create ${params.application_name} \
+        //                 --repo https://github.com/${ORG_NAME}/${params.application_name}.git \
+        //                 --path . \
+        //                 --dest-namespace default \
+        //                 --dest-server https://kubernetes.default.svc
+
+        //                 echo "argocd app sync ${params.application_name}"
+        //                 argocd app sync ${params.application_name}
+        //             """
+        //         }
+        //     }
+        // }
     }
 }
