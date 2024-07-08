@@ -134,6 +134,11 @@ pipeline {
                 }
             }
         }
+        stage('Clean Helm Cache') {
+            steps {
+                sh 'rm -rf /tmp/kustomize-helm-*/helm/.cache /tmp/kustomize-helm-*/helm/.data /tmp/kustomize-helm-*/charts/demo-0.1.0.tgz'
+            }
+        }
         stage("Sync with argocd") {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'argocd-cred', passwordVariable: 'password', usernameVariable: 'username')]) {
