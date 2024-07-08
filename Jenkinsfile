@@ -57,9 +57,9 @@ pipeline {
                         // argo manifest repo가 없으면 repo를 생성하고 초기화
                         withCredentials([string(credentialsId: 'github_token', variable: 'TOKEN')]) {
                         // manifest repo 생성
-                        def github_create_repo_api = "https://api.github.com/orgs/${env.GITHUB_USERNAME}/repos "
+                        def github_create_repo_api = "https://api.github.com/user/repos "
                         def github_auth = "-H \"Authorization: Bearer ${TOKEN}\" "
-                        def github_create_repo_body = "-d '{\"name\": \"${params.application_name}\"}'"
+                        def github_create_repo_body = "-d '{\"name\": \"${params.application_name}-manifest\"}'"
 
                         def create_repo_response = sh(
                             returnStdout: true,
@@ -73,7 +73,7 @@ pipeline {
                         // 코드의 zip으로 다운 받는 대신, 태그나 릴리즈로 받는게 안전함
                         sh """
                             rm -rf ./manifest_repo && rm -rf ./template && rm -rf ./template.zip
-                            echo git clone repo && git clone https://${env.GITHUB_USERNAME}:${TOKEN}@github.com/${env.GITHUB_USERNAME}/${params.application_name}}-manifest.git ./manifest_repo
+                            echo git clone repo && git clone https://${env.GITHUB_USERNAME}:${TOKEN}@github.com/${env.GITHUB_USERNAME}/${params.application_name}-manifest.git ./manifest_repo
                             echo download template && curl -o template.zip -L  https://github.com/${env.GITHUB_USERNAME}/argocd-manifest-template/archive/refs/heads/main.zip
                             echo uncompress template &&  unzip -j template.zip -d ./template
                             cp ./template/* ./manifest_repo
