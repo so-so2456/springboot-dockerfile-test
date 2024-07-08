@@ -114,7 +114,7 @@ pipeline {
                     sh """
                         cd ./manifest_repo
 
-                        export docker_image=${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}
+                        export docker_image=http://localhost:8082/repository/demo-app/v2/demo-image/manifests/${BUILD_NUMBER}
                         yq -i '.image = strenv(docker_image)' values.yaml
                     """
 
