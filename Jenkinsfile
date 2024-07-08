@@ -134,24 +134,24 @@ pipeline {
                 }
             }
         }
-        // stage("argocd sync") {
-        //     steps {
-        //         withCredentials([usernamePassword(credentialsId: 'argocd-cred', passwordVariable: 'password', usernameVariable: 'username')]) {
-        //             sh """
-        //                 echo "y" | argocd login ${argocd_url} --username ${username} --password ${password} --insecure
+        stage("Sync with argocd") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'argocd-cred', passwordVariable: 'qwe!@#123', usernameVariable: 'admin')]) {
+                    sh """
+                        echo "y" | argocd login ${argocd_url} --username ${username} --password ${password} --insecure
 
-        //                 # todo. app create를 계속해도 이상없는지
-        //                 argocd app create ${params.application_name} \
-        //                 --repo https://github.com/${ORG_NAME}/${params.application_name}.git \
-        //                 --path . \
-        //                 --dest-namespace default \
-        //                 --dest-server https://kubernetes.default.svc
+                        # todo. app create를 계속해도 이상없는지
+                        argocd app create ${params.application_name} \
+                        --repo https://github.com/${env.GITHUB_USERNAME}/${params.application_name}-manifest.git \
+                        --path . \
+                        --dest-namespace default \
+                        --dest-server https://kubernetes.default.svc
 
-        //                 echo "argocd app sync ${params.application_name}"
-        //                 argocd app sync ${params.application_name}
-        //             """
-        //         }
-        //     }
-        // }
+                        echo "argocd app sync ${params.application_name}"
+                        argocd app sync ${params.application_name}
+                    """
+                }
+            }
+        }
     }
 }
