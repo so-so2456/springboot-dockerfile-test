@@ -37,7 +37,7 @@ pipeline {
             }
 		}
         stage("Push the Image in Nexus") {
-            // 넥서스에 푸쉬
+            // 빌드한 이미지를 넥서스에 푸쉬
             steps {
                 sh "docker push ${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}"
             }
