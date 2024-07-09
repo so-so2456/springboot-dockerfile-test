@@ -37,8 +37,8 @@ pipeline {
                 sh "docker build -t ${env.DOCKER_USERNAME}/demo-image:${BUILD_NUMBER} ."
             }
 		}
-        stage("Push the Image in Nexus") {
-            // 빌드한 이미지를 넥서스에 푸쉬
+        stage("Push the Image in Dockerhub") {
+            // 빌드한 이미지를 개인 도커허브에 푸쉬
             steps {
                 sh "docker push ${env.DOCKER_USERNAME}/demo-image:${BUILD_NUMBER}"
             }
