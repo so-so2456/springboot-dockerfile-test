@@ -111,10 +111,10 @@ pipeline {
                     sh "echo git clone repo && git clone https://${env.GITHUB_USERNAME}:${TOKEN}@github.com/${env.GITHUB_USERNAME}/${params.application_name}-manifest.git ./manifest_repo"
 
                     // update helm chart values.yaml
-                    sh """
+                    sh """ 
                         cd ./manifest_repo
 
-                        export docker_image=http://localhost:8082/repository/demo-app/v2/demo-image/manifests/${BUILD_NUMBER}
+                        export docker_image=${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}
                         yq -i '.image = strenv(docker_image)' values.yaml
                     """
 
