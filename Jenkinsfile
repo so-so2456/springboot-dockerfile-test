@@ -153,7 +153,7 @@ pipeline {
                         --dest-namespace default \
                         --dest-server https://kubernetes.default.svc
 
-                        echo "argocd app sync ${params.application_name}"
+                        echo "argocd app sync ${params.application_name} -o --prune"
                         argocd app sync ${params.application_name}
                     """
                 }
