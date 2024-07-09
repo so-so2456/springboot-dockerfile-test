@@ -17,6 +17,7 @@ pipeline {
         NEXUS_IP = "localhost:5443"
         NEXUS_ID = "admin"
         NEXUS_PW = "123"
+        DOCKER_USERNAME = "homecoder"
     }
 
     stages {
@@ -33,13 +34,13 @@ pipeline {
         stage("Build a Image") {
             // 도커 이미지, 태그 네임 정책 필요
             steps {
-                sh "docker build -t ${env.NEXUS_IP}/demo-image:${BUILD_NUMBER} ."
+                sh "docker build -t ${env.DOCKER_USERNAME}/demo-image:${BUILD_NUMBER} ."
             }
 		}
         stage("Push the Image in Nexus") {
             // 빌드한 이미지를 넥서스에 푸쉬
             steps {
-                sh "docker push ${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}"
+                sh "docker push ${env.DOCKER_USERNAME}/demo-image:${BUILD_NUMBER}"
             }
 		}
         stage("Check manifest repo exist & Create manifest repo if not exist") {
@@ -114,7 +115,7 @@ pipeline {
                     sh """ 
                         cd ./manifest_repo
 
-                        export docker_image=${env.NEXUS_IP}/demo-image:${BUILD_NUMBER}
+                        export docker_image=${env.DOCKER_USERNAME}/demo-image:${BUILD_NUMBER}
                         yq -i '.image = strenv(docker_image)' values.yaml
                     """
 
